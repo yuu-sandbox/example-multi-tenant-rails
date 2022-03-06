@@ -1,0 +1,74 @@
+version: '3'
+services:
+  web:
+    build:
+      context: ./
+      dockerfile: Dockerfile.web
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - cert-data:/var/lib/cert-data
+      - web-data:/srv
+      - web-confd:/etc/nginx/conf.d
+      - web-encrypt:/etc/letsencrypt/
+
+  app: &app_base
+    build: '.'
+    ports:
+      - $HTTP_PORT:3000
+    command: /bin/sh -c "bundle exec rails s -b 0.0.0.0"
+    environment:
+      RAILS_ENV: $RAILS_ENV
+      NODE_ENV: $RAILS_ENV
+      # .bundle/config を gitに含めて提供してください
+      BUNDLE_APP_CONFIG: ./.bundle
+      DB_USER: $DB_USER
+      DB_PASS: $DB_PASS
+      DB_HOST: db
+      DB_PORT: 5432
+      MAILER_PASSWORD: $MAILER_PASSWORD
+    volumes:
+      - .:/var/www/
+      - bundle:/var/www/vendor/bundle
+      - node-modules:/var/www/node_modules
+      - packs:/var/www/public/packs
+    depends_on:
+      - postgres
+
+  webpack:
+    <<: *app_base
+    command: /bin/sh -c "bin/webpack-dev-server"
+    environment:
+      NODE_ENV: $RAILS_ENV
+      RAILS_ENV: $RAILS_ENV
+      BUNDLE_APP_CONFIG: ./.bundle
+      WEBPACKER_DEV_SERVER_HOST: 0.0.0.0
+    ports:
+      - $WEBPACK_PORT:3035
+    tty: true
+    stdin_open: true
+    depends_on:
+      - app
+
+  db:
+    image: postgres:12.2
+    ports:
+      - $DB_PORT:5432
+    environment:
+      POSTGRES_USER: $DB_USER
+      POSTGRES_PASSWORD: $DB_PASS
+      TZ: Asia/Tokyo
+    volumes:
+      - pgsql-data:/var/lib/postgresql/data
+
+volumes:
+  https-portal-data:
+  cert-data:
+  web-data:
+  web-confd:
+  web-encrypt:
+  pgsql-data:
+  bundle:
+  node-modules:
+  packs:
