@@ -1,10 +1,10 @@
 class SubdomainRequired
   def self.matches?(request)
     subdomain = request.subdomains.first
+    Rails.logger.debug("@@ route subdomain: #{subdomain}")
     # tenant = Author.find_by subdomain: subdomain
-    tenant = true
-    # subdomain.present? && tenant
-    subdomain.present? && /^[a-zA-Z][a-zA-Z0-9-]*{2}$/.match(subdomain)
+    tenant = request.subdomains.size == 2
+    subdomain.present? && tenant
   end
 end
 
