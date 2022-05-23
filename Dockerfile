@@ -2,7 +2,11 @@ FROM node:12.14.0 as node
 FROM ruby:2.7.1
 
 RUN apt-get update -qq && apt-get install -y postgresql-client && \
-    apt-get install -y locales cron
+    apt-get install -y locales cron tzdata
+RUN locale-gen ja_JP.UTF-8
+RUN rm /etc/localtime \
+  && ln -s /usr/share/zoneinfo/Asia/Tokyo /etc/localtime \
+  && dpkg-reconfigure -f noninteractive tzdata
 
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
 COPY --from=node /usr/local/include/node /usr/local/include/node
@@ -29,10 +33,4 @@ COPY ./docker/entrypoint.sh /usr/bin/
 RUN chmod +x /usr/bin/entrypoint.sh
 ENTRYPOINT ["entrypoint.sh"]
 
-RUN locale-gen ja_JP.UTF-8
-RUN apt-get install -y tzdata \
-  && rm /etc/localtime \
-  && ln -s /usr/share/zoneinfo/Asia/Tokyo /etc/localtime \
-  && dpkg-reconfigure -f noninteractive tzdata
-RUN rm -rf /var/lib/apt/lists/*
 EXPOSE 3000

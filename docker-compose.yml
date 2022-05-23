@@ -34,7 +34,7 @@ services:
       - node-modules:/var/www/node_modules
       - packs:/var/www/public/packs
     depends_on:
-      - postgres
+      - db
 
   webpack:
     <<: *app_base
